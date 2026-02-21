@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Bellerose Village Parcels</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="data/BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.js"></script>
+        <script>
+        var highlightLayer;
+
+function highlightFeature(e) {
+    var layer = e.target;
+    var isSplitParcel = layer.feature.properties.T_VILLAGE_PCT_1 < 100;
+    
+    layer.setStyle({
+        fillOpacity: 0.5,        // Much brighter when clicked
+        fillColor: isSplitParcel ? '#ff9800' : '#4a90e2',  // Brighter orange or blue
+        weight: 3,
+        color: isSplitParcel ? '#e65100' : '#2c5f8d',  // Darker borders
+        dashArray: ''
+    });
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+    }
+}
+
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:20, minZoom:15
+        }).fitBounds([[40.72204020707445,-73.72128360605954],[40.72576173302334,-73.71562584563095]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var title = new L.Control({'position':'topleft'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+		
+title.update = function () {
+    this._div.innerHTML = '<h2 style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px; line-height: 1.2;"><img src="images/bv.png" style="height: 62px; margin: 0;" alt="Bellerose Village" onerror="this.style.display=\'none\'">Bellerose Village</BR>Parcel Map</h2>';
+};
+
+      
+title.addTo(map);
+var abstract = new L.Control({'position':'bottomright'});
+abstract.onAdd = function (map) {
+    this._div = L.DomUtil.create('div',
+    'leaflet-control abstract');
+    this._div.id = 'abstract'
+        abstract.show();
+        return this._div;
+    };
+    abstract.show = function () {
+        this._div.classList.remove("abstract");
+        this._div.classList.add("abstractUncollapsed");
+        this._div.innerHTML = '<strong>Bellerose Village Parcel Map - Authoritative Layer</strong><br />Source: Nassau County GIS and Village of Bellerose<br />George Morfessis - Copyright © 2026';
+};
+        abstract.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+            map.setMaxBounds(map.getBounds());
+            map.setMinZoom(map.getZoom());
+        }
+		
+
+
+map.createPane('pane_OpenStreetMap_1');
+map.getPane('pane_OpenStreetMap_1').style.zIndex = 401;
+var layer_OpenStreetMap_1 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    pane: 'pane_OpenStreetMap_1',
+    opacity: 1.0,
+    attribution: '',
+    minZoom: 15,
+    maxZoom: 20,
+    minNativeZoom: 0,
+    maxNativeZoom: 19
+});
+
+// Add only OSM by default (not both)
+map.addLayer(layer_OpenStreetMap_1);
+
+
+// ADD SATELLITE IMAGERY BASEMAP
+// Add this code RIGHT AFTER the OpenStreetMap_1 definition and BEFORE the basemap control
+
+// ESRI World Imagery (Satellite)
+//map.createPane('pane_ESRISatellite');
+//map.getPane('pane_ESRISatellite').style.zIndex = 399;
+//var layer_ESRISatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  //  pane: 'pane_ESRISatellite',
+   // opacity: 1.0,
+   // attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+   // minZoom: 15,
+   // maxZoom: 20,
+   // minNativeZoom: 0,
+   // maxNativeZoom: 18
+//});
+
+// ESRI World Imagery with Labels (Hybrid)
+map.createPane('pane_ESRIHybrid');
+map.getPane('pane_ESRIHybrid').style.zIndex = 398;
+
+var layer_ESRIHybrid = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        pane: 'pane_ESRIHybrid',
+        opacity: 1.0,
+        attribution: 'Tiles &copy; Esri',
+        minZoom: 15,
+        maxZoom: 20
+    }),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        pane: 'pane_ESRIHybrid',
+        opacity: 1.0,
+        minZoom: 15,
+        maxZoom: 20
+    })
+]);
+
+
+
+
+
+
+
+// THEN UPDATE YOUR BASEMAP CONTROL TO:
+
+var baseMaps = {
+    "Street Map": layer_OpenStreetMap_1,
+    "Satellite": layer_ESRIHybrid
+};
+
+// Add layer control to map (top-right corner)
+L.control.layers(baseMaps, null, {position: 'topright'}).addTo(map);
+
+
+		
+		
+	//END  // FIND THE SECTION WITH THE BASEMAPS (the code you just pasted)
+// FINAL UPDATED POPUP FUNCTION - Replace the entire pop_BelleroseVillage... function with this:
+function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2(feature, layer) {
+    layer.on({
+    click: function(e) {
+        // Highlight on click
+        highlightFeature(e);
+    },
+    popupclose: function(e) {
+        // Reset style when popup closes
+        for (var i in e.target._eventParents) {
+            if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                e.target._eventParents[i].resetStyle(e.target);
+            }
+        }
+    }
+});
+    
+    // Get property values from feature
+    var props = feature.properties;
+    
+    // Function to expand suffix abbreviations
+    function expandSuffix(suffix) {
+        if (!suffix) return '';
+        var suffixMap = {
+            'Blvd': 'Boulevard',
+            'Ln': 'Lane',
+            'Rd': 'Road',
+            'Tpke': 'Turnpike'
+        };
+        return suffixMap[suffix] || suffix;
+    }
+    
+    // Build address for Google Maps OR use coordinates for "No #" parcels
+    var streetNumber = props.PARCEL_STREET_NUMBER || '';
+    var useCoordinates = streetNumber.toLowerCase().includes('no') || streetNumber.includes('#');
+    var googleMapsUrl;
+    if (useCoordinates) {
+        // Use coordinates for parcels without street numbers
+        var centroid = layer.getBounds().getCenter();
+        googleMapsUrl = 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=' + centroid.lat + ',' + centroid.lng;
+    } else {
+        // Use address for normal parcels
+        var addressForMap = (streetNumber ? streetNumber + ' ' : '') + 
+                            (props.PARCEL_STREET || '').trim() + ' ' + 
+                            (expandSuffix(props.PARCEL_SUFFIX || '') || '').trim() + ' ' +
+                            (props.PARCEL_CITY || '').trim() + ' NY';
+        addressForMap = addressForMap.replace(/\s+/g, ' ').trim().replace(/\s/g, '+');
+        googleMapsUrl = 'https://www.google.com/maps/search/' + addressForMap;
+    }
+    
+    // Build custom HTML popup
+    var popupContent = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; max-width: 400px; background-color: #f9faf7; border: 2px solid #6b8e23; border-radius: 8px;">
+          
+          <!-- Property Address Header -->
+          <div style="background: linear-gradient(135deg, #6b8e23 0%, #556b2f 100%); color: white; padding: 12px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0;">
+            <h3 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 600;">
+              ${(props.PARCEL_STREET_NUMBER && !props.PARCEL_STREET_NUMBER.includes('#') && !props.PARCEL_STREET_NUMBER.toLowerCase().includes('no')) ? props.PARCEL_STREET_NUMBER + ' ' : ''}${props.PARCEL_STREET || ''} ${expandSuffix(props.PARCEL_SUFFIX || '')}
+            </h3>
+            <div style="font-size: 13px; opacity: 0.95; margin-bottom: 10px;">
+              ${props.PARCEL_CITY || ''}, ${(props.PARCEL_STATE || '').toUpperCase()} ${props.PARCEL_ZIP || ''}
+            </div>
+            
+            <!-- S/B/L Row -->
+            <div style="font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.15); padding: 6px 8px; border-radius: 6px; margin-bottom: 8px;">
+              S-B-L: ${props.T_SECTION || ''}-${props.T_BLOCK || ''}-${props.T_LOT_NUMBER_PREF || ''}${props.T_LOT_SUFFIX || ''}
+            </div>
+            
+            <!-- Links Row -->
+            <div style="display: flex; gap: 8px; justify-content: center;">
+              <!-- Nassau County Link -->
+              <a href="https://lrv.nassaucountyny.gov/info/${(props.PARID || '').replace(/  /g, '++')}/" 
+                 target="_blank" 
+                 title="View Nassau County Land Records"
+                 style="display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #1a5490 0%, #2d7ab8 50%, #1a5490 100%); color: white; padding: 8px 14px; text-decoration: none; border-radius: 8px; font-size: 11px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);">
+                <span style="font-size: 18px;">🏛️</span>
+                <span>Nassau County LRV</span>
+              </a>
+              <!-- Google Maps Link -->
+              <a href="${googleMapsUrl}" 
+                 target="_blank" 
+                 title="View on Google Maps"
+                 style="display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #4285F4 0%, #34a853 100%); color: white; padding: 8px 14px; text-decoration: none; border-radius: 8px; font-size: 11px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);">
+                <span style="font-size: 18px;">🗺️</span>
+                <span>Google Maps</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Owner Information -->
+          <div style="background-color: #fff; padding: 10px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #8fbc8f;">
+            <div style="font-weight: 600; color: #556b2f; font-size: 13px; margin-bottom: 6px;">Owner(s):</div>
+            <div style="font-size: 13px; line-height: 1.5;">
+              ${props.COUNTY_OWNER_2025 || ''}<br/>
+              ${props['2025_OWNER_CAREOF'] ? 'c/o ' + props['2025_OWNER_CAREOF'] + '<br/>' : ''}
+              ${props['2025_OWNER_MAILING_ADDRESS'] || ''}
+            </div>
+          </div>
+
+          <!-- Split Parcel Warning (conditional) -->
+          ${props.T_VILLAGE_PCT_1 < 100 ? `
+            <div style="background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+              <div style="font-weight: 700; color: #856404; font-size: 14px; margin-bottom: 6px;">⚠ Split Parcel</div>
+              <div style="font-size: 13px; color: #856404; line-height: 1.5;">
+                ${props.T_VILLAGE_PCT_2}% is in ${props.T_VILLAGE_CODE_2 === 'BLT' ? 'Bellerose Terrace (ToH).' : props.T_VILLAGE_CODE_2 === 'FP' ? 'the Village of Floral Park.' : 'another jurisdiction.'}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Collapsible Parcel Details Section -->
+          <details style="background-color: #fff; border-radius: 6px; margin-bottom: 12px; border: 1px solid #d3d3d3;">
+            <summary style="padding: 10px; font-weight: 600; color: #556b2f; cursor: pointer; background-color: #f5f8f0; border-radius: 6px; user-select: none;">
+              📋 Parcel Details
+            </summary>
+            <div style="padding: 10px; border-top: 1px solid #e0e0e0;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <tr>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f; width: 35%;">Section:</td>
+                  <td style="padding: 4px 8px;">${props.T_SECTION || ''}</td>
+                </tr>
+                <tr style="background-color: #f5f8f0;">
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">Block:</td>
+                  <td style="padding: 4px 8px;">${props.T_BLOCK || ''}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">Lot:</td>
+                  <td style="padding: 4px 8px;">${props.T_LOT_NUMBER_PREF || ''}${props.T_LOT_SUFFIX || ''}</td>
+                </tr>
+                <tr style="background-color: #f5f8f0;">
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">School District:</td>
+                  <td style="padding: 4px 8px;">22 – Floral Park-Bellerose</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">Category:</td>
+                  <td style="padding: 4px 8px;">${props['NYS Property Categories_Category_Description'] || ''}</td>
+                </tr>
+                <tr style="background-color: #f5f8f0;">
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f; vertical-align: top;">Class:</td>
+                  <td style="padding: 4px 8px;">${props.T_PROP_CLASS_CODE_FULL || ''} - ${props['NYS Property Class Codes_Property Class Code Description'] || ''}</td>
+                </tr>
+                ${props.T_LOT_GROUP ? `
+                <tr>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">Lot Group:</td>
+                  <td style="padding: 4px 8px;">${props.T_LOT_GROUP}</td>
+                </tr>
+                ` : ''}
+                <tr style="background-color: #f5f8f0;">
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f; vertical-align: top;">Lot Size:</td>
+                  <td style="padding: 4px 8px;">
+                    ${(props.LAND_ACRES || 0).toFixed(2)} acres (${Math.round(props.LAND_SF || 0).toLocaleString()} sq ft) - ${props.LAND_FRONTAGE || ''}' x ${props.LAND_DEPTH || ''}'
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </details>
+
+          <!-- Footer with timestamp -->
+          <div style="text-align: center; font-size: 11px; color: #888; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
+            Property Information • ${new Date().toLocaleDateString()}
+          </div>
+
+        </div>
+    `;
+    
+    var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+    layer.on('popupopen', function(e) {
+        addClassToPopupIfMedia(content, e.popup);
+    });
+    layer.bindPopup(content, { maxHeight: 400 });
+}
+//END END END  REPLACE THE pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2 FUNCTION *********
+
+
+        function style_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2_0(feature) {
+    // Check if it's a split parcel
+    var isSplitParcel = feature.properties.T_VILLAGE_PCT_1 < 100;
+    
+    return {
+        pane: 'pane_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2',
+        opacity: 1,
+        color: isSplitParcel ? 'rgba(255,193,7,1.0)' : 'rgba(166,206,227,1.0)',  // Orange border for split, blue for normal
+        dashArray: '',
+        lineCap: 'square',
+        lineJoin: 'bevel',
+        weight: 2.0,
+        fillOpacity: isSplitParcel ? 0.2 : 0.15,  // Slightly more fill for split parcels
+        fillColor: isSplitParcel ? '#ffc107' : '#7eb3d4',  // Amber for split, light blue for normal
+        interactive: true,
+    }
+}
+        map.createPane('pane_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2');
+        map.getPane('pane_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2').style.zIndex = 450;
+        map.getPane('pane_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2').style['mix-blend-mode'] = 'normal';
+        var layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2 = new L.geoJson(json_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2',
+            layerName: 'layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2',
+            pane: 'pane_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2',
+            onEachFeature: pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2,
+            style: function(feature) {
+        return style_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2_0(feature);
+    },
+});
+        bounds_group.addLayer(layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2);
+        map.addLayer(layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2);
+        map.on("zoomend", function(e) {
+            if (map.getZoom() <= 19 && map.getZoom() >= 2) {
+                map.addLayer(layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2);
+            } else if (map.getZoom() > 19 || map.getZoom() < 2) {
+                map.removeLayer(layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2);
+            }
+        });
+            if (map.getZoom() <= 19 && map.getZoom() >= 2) {
+                map.addLayer(layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2);
+            } else if (map.getZoom() > 19 || map.getZoom() < 2) {
+                map.removeLayer(layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2);
+            }
+        var overlaysTree = [
+            {label: '<img src="legend/BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.png" /> Bellerose Village Parcels - Final Version — bellerose_village_parcels_final_version', layer: layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2},
+            {label: "OpenStreetMap", layer: layer_OpenStreetMap_1, radioGroup: 'bm' },
+            {label: "OpenTopoMap", layer: layer_OpenTopoMap_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        var i = 0;
+		
+		
+		//DISABLED LABELS   GVM
+		
+        layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.eachLayer(function(layer) {
+       var context = {
+            feature: layer.feature,
+            variables: {}
+          };
+           // layer.bindTooltip((exp_label_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2_eval_expression(context) !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + exp_label_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2_eval_expression(context)) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2'});
+            //labels.push(layer);
+           // totalMarkers += 1;
+            layer.added = true;
+            //  addLabel(layer, i);
+             i++;
+			  
+			
+			  
+			  
+			  
+        });
+        resetLabels([layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2]);
+        map.on("zoomend", function(){
+            resetLabels([layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2]);
+        });
+        </script>        
+    </body>
+</html>
