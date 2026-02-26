@@ -12,22 +12,13 @@
         <link rel="stylesheet" href="css/fontawesome-all.min.css">
         <link rel="stylesheet" href="css/leaflet.photon.css">
         <style>
-html, body, #map {
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    margin: 0;
-}
-
-/* Remove popup arrow/tail */
-.leaflet-popup-tip-container {
-    display: none !important;
-}
-
-.leaflet-popup-content-wrapper {
-    border-radius: 8px;
-}
-</style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
         <title>Bellerose Village Parcels</title>
     </head>
     <body>
@@ -240,10 +231,8 @@ L.control.layers(baseMaps, null, {position: 'topright'}).addTo(map);
 
 		
 		
-//END - FIND THE SECTION WITH THE BASEMAPS (the code you just pasted)
-
-// FINAL POPUP FUNCTION - Replace the entire pop_BelleroseVillage... function with this:
-
+	//END  // FIND THE SECTION WITH THE BASEMAPS (the code you just pasted)
+// FINAL UPDATED POPUP FUNCTION - Replace the entire pop_BelleroseVillage... function with this:
 function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2(feature, layer) {
     layer.on({
     click: function(e) {
@@ -275,10 +264,6 @@ function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_
         return suffixMap[suffix] || suffix;
     }
     
-    // Build S/B/L with conditional lot suffix (exclude if "0")
-    var lotSuffix = (props.T_LOT_SUFFIX && props.T_LOT_SUFFIX !== '0') ? props.T_LOT_SUFFIX : '';
-    var sblDisplay = props.T_SECTION + '-' + props.T_BLOCK + '-' + props.T_LOT_NUMBER_PREF + lotSuffix;
-    
     // Build address for Google Maps OR use coordinates for "No #" parcels
     var streetNumber = props.PARCEL_STREET_NUMBER || '';
     var useCoordinates = streetNumber.toLowerCase().includes('no') || streetNumber.includes('#');
@@ -297,125 +282,105 @@ function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_
         googleMapsUrl = 'https://www.google.com/maps/search/' + addressForMap;
     }
     
-    // Build owner display with tight spacing
-    var ownerDisplay = props.BV_OWNER || '';
-    if (props.BV_OWNER_CAREOF) {
-        ownerDisplay += '<br/>' + props.BV_OWNER_CAREOF;
-    }
-    if (props.BV_OWNER_ADDRESS) {
-        ownerDisplay += '<br/>' + props.BV_OWNER_ADDRESS;
-    }
-    if (props.BV_OWNER_CSZ) {
-        ownerDisplay += '<br/>' + props.BV_OWNER_CSZ;
-    }
-    
     // Build custom HTML popup
     var popupContent = `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 10px; max-width: 400px; background-color: #f9faf7; border: 2px solid #6b8e23; border-radius: 8px;">
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 15px; max-width: 400px; background-color: #f9faf7; border: 2px solid #6b8e23; border-radius: 8px;">
           
           <!-- Property Address Header -->
-          <div style="background: linear-gradient(135deg, #6b8e23 0%, #556b2f 100%); color: white; padding: 8px; margin: -10px -10px 10px -10px; border-radius: 6px 6px 0 0;">
-            <h3 style="margin: 0 0 3px 0; font-size: 16px; font-weight: 600;">
+          <div style="background: linear-gradient(135deg, #6b8e23 0%, #556b2f 100%); color: white; padding: 12px; margin: -15px -15px 15px -15px; border-radius: 6px 6px 0 0;">
+            <h3 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 600;">
               ${(props.PARCEL_STREET_NUMBER && !props.PARCEL_STREET_NUMBER.includes('#') && !props.PARCEL_STREET_NUMBER.toLowerCase().includes('no')) ? props.PARCEL_STREET_NUMBER + ' ' : ''}${props.PARCEL_STREET || ''} ${expandSuffix(props.PARCEL_SUFFIX || '')}
             </h3>
-            <div style="font-size: 13px; opacity: 0.95; margin-bottom: 6px;">
+            <div style="font-size: 13px; opacity: 0.95; margin-bottom: 10px;">
               ${props.PARCEL_CITY || ''}, ${(props.PARCEL_STATE || '').toUpperCase()} ${props.PARCEL_ZIP || ''}
             </div>
             
             <!-- S/B/L Row -->
-            <div style="font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.15); padding: 4px 6px; border-radius: 6px; margin-bottom: 6px;">
-              S-B-L: ${sblDisplay}
+            <div style="font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.15); padding: 6px 8px; border-radius: 6px; margin-bottom: 8px;">
+              S-B-L: ${props.T_SECTION || ''}-${props.T_BLOCK || ''}-${props.T_LOT_NUMBER_PREF || ''}${props.T_LOT_SUFFIX || ''}
             </div>
             
             <!-- Links Row -->
-            <div style="display: flex; gap: 6px; justify-content: center;">
+            <div style="display: flex; gap: 8px; justify-content: center;">
               <!-- Nassau County Link -->
               <a href="https://lrv.nassaucountyny.gov/info/${(props.PARID || '').replace(/  /g, '++')}/" 
                  target="_blank" 
                  title="View Nassau County Land Records"
-                 style="display: flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #1a5490 0%, #2d7ab8 50%, #1a5490 100%); color: white; padding: 6px 10px; text-decoration: none; border-radius: 6px; font-size: 10px; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);">
-                <span style="font-size: 16px;">🏛️</span>
+                 style="display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #1a5490 0%, #2d7ab8 50%, #1a5490 100%); color: white; padding: 8px 14px; text-decoration: none; border-radius: 8px; font-size: 11px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);">
+                <span style="font-size: 18px;">🏛️</span>
                 <span>Nassau County LRV</span>
               </a>
               <!-- Google Maps Link -->
               <a href="${googleMapsUrl}" 
                  target="_blank" 
                  title="View on Google Maps"
-                 style="display: flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #4285F4 0%, #34a853 100%); color: white; padding: 6px 10px; text-decoration: none; border-radius: 6px; font-size: 10px; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);">
-                <span style="font-size: 16px;">🗺️</span>
+                 style="display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #4285F4 0%, #34a853 100%); color: white; padding: 8px 14px; text-decoration: none; border-radius: 8px; font-size: 11px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2);">
+                <span style="font-size: 18px;">🗺️</span>
                 <span>Google Maps</span>
               </a>
             </div>
           </div>
 
-          <!-- Owner Information (BV Fields) -->
-          <div style="background-color: #fff; padding: 8px; border-radius: 6px; margin-bottom: 8px; border-left: 4px solid #8fbc8f;">
-            <div style="font-weight: 600; color: #556b2f; font-size: 13px; margin-bottom: 4px;">Owner(s):</div>
-            <div style="font-size: 13px; line-height: 1.4;">
-              ${ownerDisplay}
+          <!-- Owner Information -->
+          <div style="background-color: #fff; padding: 10px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #8fbc8f;">
+            <div style="font-weight: 600; color: #556b2f; font-size: 13px; margin-bottom: 6px;">Owner(s):</div>
+            <div style="font-size: 13px; line-height: 1.5;">
+              ${props.COUNTY_OWNER_2025 || ''}<br/>
+              ${props['2025_OWNER_CAREOF'] ? 'c/o ' + props['2025_OWNER_CAREOF'] + '<br/>' : ''}
+              ${props['2025_OWNER_MAILING_ADDRESS'] || ''}
             </div>
           </div>
 
-          <!-- Collapsible Split Parcel Warning (conditional) -->
+          <!-- Split Parcel Warning (conditional) -->
           ${props.T_VILLAGE_PCT_1 < 100 ? `
-            <details style="background-color: #fff; border-radius: 6px; margin-bottom: 8px; border: 1px solid #ffc107;">
-              <summary style="padding: 8px; font-weight: 600; color: #856404; cursor: pointer; background-color: #fff3cd; border-radius: 6px; user-select: none; font-size: 13px;">
-                ⚠ Split Parcel
-              </summary>
-              <div style="padding: 8px; border-top: 1px solid #ffc107;">
-                <div style="font-size: 13px; color: #856404; line-height: 1.4;">
-                  ${props.T_VILLAGE_PCT_2}% is in ${props.T_VILLAGE_CODE_2 === 'BLT' ? 'Bellerose Terrace (ToH).' : props.T_VILLAGE_CODE_2 === 'FP' ? 'the Village of Floral Park.' : 'another jurisdiction.'}
-                </div>
+            <div style="background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+              <div style="font-weight: 700; color: #856404; font-size: 14px; margin-bottom: 6px;">⚠ Split Parcel</div>
+              <div style="font-size: 13px; color: #856404; line-height: 1.5;">
+                ${props.T_VILLAGE_PCT_2}% is in ${props.T_VILLAGE_CODE_2 === 'BLT' ? 'Bellerose Terrace (ToH).' : props.T_VILLAGE_CODE_2 === 'FP' ? 'the Village of Floral Park.' : 'another jurisdiction.'}
               </div>
-            </details>
+            </div>
           ` : ''}
 
           <!-- Collapsible Parcel Details Section -->
-          <details style="background-color: #fff; border-radius: 6px; margin-bottom: 8px; border: 1px solid #d3d3d3;">
-            <summary style="padding: 8px; font-weight: 600; color: #556b2f; cursor: pointer; background-color: #f5f8f0; border-radius: 6px; user-select: none; font-size: 13px;">
+          <details style="background-color: #fff; border-radius: 6px; margin-bottom: 12px; border: 1px solid #d3d3d3;">
+            <summary style="padding: 10px; font-weight: 600; color: #556b2f; cursor: pointer; background-color: #f5f8f0; border-radius: 6px; user-select: none;">
               📋 Parcel Details
             </summary>
-            <div style="padding: 8px; border-top: 1px solid #e0e0e0;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <div style="padding: 10px; border-top: 1px solid #e0e0e0;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <tr>
-                  <td style="padding: 3px 6px; font-weight: 600; color: #556b2f; width: 35%;">Section:</td>
-                  <td style="padding: 3px 6px;">${props.T_SECTION || ''}</td>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f; width: 35%;">Section:</td>
+                  <td style="padding: 4px 8px;">${props.T_SECTION || ''}</td>
                 </tr>
                 <tr style="background-color: #f5f8f0;">
-                  <td style="padding: 3px 6px; font-weight: 600; color: #556b2f;">Block:</td>
-                  <td style="padding: 3px 6px;">${props.T_BLOCK || ''}</td>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">Block:</td>
+                  <td style="padding: 4px 8px;">${props.T_BLOCK || ''}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 3px 6px; font-weight: 600; color: #556b2f;">Lot:</td>
-                  <td style="padding: 3px 6px;">${props.T_LOT_NUMBER_PREF || ''}${lotSuffix}</td>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">Lot:</td>
+                  <td style="padding: 4px 8px;">${props.T_LOT_NUMBER_PREF || ''}${props.T_LOT_SUFFIX || ''}</td>
                 </tr>
                 <tr style="background-color: #f5f8f0;">
-                  <td style="padding: 3px 6px; font-weight: 600; color: #556b2f;">School District:</td>
-                  <td style="padding: 3px 6px;">22 – Floral Park-Bellerose</td>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">School District:</td>
+                  <td style="padding: 4px 8px;">22 – Floral Park-Bellerose</td>
                 </tr>
                 <tr>
-                  <td style="padding: 3px 6px; font-weight: 600; color: #556b2f;">Category:</td>
-                  <td style="padding: 3px 6px;">${props['NYS Property Categories_Category_Description'] || ''}</td>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">Category:</td>
+                  <td style="padding: 4px 8px;">${props['NYS Property Categories_Category_Description'] || ''}</td>
                 </tr>
                 <tr style="background-color: #f5f8f0;">
-                  <td style="padding: 3px 6px; font-weight: 600; color: #556b2f; vertical-align: top;">Class:</td>
-                  <td style="padding: 3px 6px;">${props.T_PROP_CLASS_CODE_FULL || ''} - ${props['NYS Property Class Codes_Property Class Code Description'] || ''}</td>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f; vertical-align: top;">Class:</td>
+                  <td style="padding: 4px 8px;">${props.T_PROP_CLASS_CODE_FULL || ''} - ${props['NYS Property Class Codes_Property Class Code Description'] || ''}</td>
                 </tr>
                 ${props.T_LOT_GROUP ? `
                 <tr>
-                  <td style="padding: 3px 6px; font-weight: 600; color: #556b2f;">Lot Group:</td>
-                  <td style="padding: 3px 6px;">${props.T_LOT_GROUP}</td>
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f;">Lot Group:</td>
+                  <td style="padding: 4px 8px;">${props.T_LOT_GROUP}</td>
                 </tr>
                 ` : ''}
                 <tr style="background-color: #f5f8f0;">
-                  <td style="padding: 3px 6px; font-weight: 600; color: #556b2f; vertical-align: top;">Nassau County Owner(s):</td>
-                  <td style="padding: 3px 6px; line-height: 1.4;">
-                    ${props.COUNTY_OWNER_2025 || ''}${props['2025_OWNER_CAREOF'] ? '<br/>' + props['2025_OWNER_CAREOF'] : ''}${props['2025_OWNER_MAILING_ADDRESS'] ? '<br/>' + props['2025_OWNER_MAILING_ADDRESS'] : ''}
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 3px 6px; font-weight: 600; color: #556b2f; vertical-align: top;">Lot Size:</td>
-                  <td style="padding: 3px 6px;">
+                  <td style="padding: 4px 8px; font-weight: 600; color: #556b2f; vertical-align: top;">Lot Size:</td>
+                  <td style="padding: 4px 8px;">
                     ${(props.LAND_ACRES || 0).toFixed(2)} acres (${Math.round(props.LAND_SF || 0).toLocaleString()} sq ft) - ${props.LAND_FRONTAGE || ''}' x ${props.LAND_DEPTH || ''}'
                   </td>
                 </tr>
@@ -423,22 +388,8 @@ function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_
             </div>
           </details>
 
-          <!-- Collapsible Notes Section (conditional - only if COMMENTS has value) -->
-          ${props.COMMENTS ? `
-            <details style="background-color: #fff; border-radius: 6px; margin-bottom: 8px; border: 1px solid #d3d3d3;">
-              <summary style="padding: 8px; font-weight: 600; color: #2c5f8d; cursor: pointer; background-color: #e8f4f8; border-radius: 6px; user-select: none; font-size: 13px;">
-                📝 Notes
-              </summary>
-              <div style="padding: 8px; border-top: 1px solid #e0e0e0;">
-                <div style="font-size: 12px; color: #2c5f8d; line-height: 1.4;">
-                  ${props.COMMENTS}
-                </div>
-              </div>
-            </details>
-          ` : ''}
-
           <!-- Footer with timestamp -->
-          <div style="text-align: center; font-size: 10px; color: #888; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e0e0e0;">
+          <div style="text-align: center; font-size: 11px; color: #888; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">
             Property Information • ${new Date().toLocaleDateString()}
           </div>
 
@@ -449,13 +400,8 @@ function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_
     layer.on('popupopen', function(e) {
         addClassToPopupIfMedia(content, e.popup);
     });
-    layer.bindPopup(content, { 
-    maxHeight: 550,  // Increased from 400 to 550
-    autoPanPadding: [50, 50],
-    offset: [150, 0]
-});
+    layer.bindPopup(content, { maxHeight: 400 });
 }
-
 //END END END  REPLACE THE pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2 FUNCTION *********
 
 
