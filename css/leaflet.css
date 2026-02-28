@@ -408,6 +408,80 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	}
 
 
+
+/* Filter control - match layers control exactly */
+.leaflet-control-filter {
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    background: #fff;
+    border-radius: 5px;
+}
+
+.leaflet-control-filter a {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M6 2h14l-6 9v7l-2 2v-9z' fill='%23333'/%3E%3C/svg%3E");
+    width: 36px;
+    height: 36px;
+    background-color: #fff;
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    display: block;
+    border-radius: 4px;
+    box-sizing: border-box;  /* ADD THIS */
+    margin-left: 3px;  /* Pull entire box left 3px */
+    margin-top: 3px;  /* Pull entire box up 3px */
+
+}
+
+.leaflet-retina .leaflet-control-filter a {
+    background-size: 30px 30px;
+}
+
+.leaflet-touch .leaflet-control-filter a {
+    width: 44px;
+    height: 44px;
+}
+
+/* Filter opens on hover like layers */
+.leaflet-control-filter:hover {
+    padding: 6px 10px 6px 6px;
+    color: #333;
+    background: #fff;
+}
+
+.leaflet-control-filter:hover a {
+    display: none;
+}
+
+.leaflet-control-filter:hover .filter-section {
+    display: block;
+}
+
+.leaflet-control-filter .filter-section,
+.leaflet-control-filter.leaflet-control-layers-expanded a {
+    display: none;
+}
+
+.leaflet-control-filter.leaflet-control-layers-expanded .filter-section {
+    display: block;
+    position: relative;
+}
+
+.leaflet-control-filter.leaflet-control-layers-expanded {
+    padding: 6px 10px 6px 6px;
+    color: #333;
+    background: #fff;
+}
+
+.leaflet-control-filter label {
+    display: block;
+    font-size: 13px;
+    font-size: 1.08333em;
+}
+
+.leaflet-control-filter input {
+    margin-right: 5px;
+}
+
+
 /* attribution and scale controls */
 
 .leaflet-container .leaflet-control-attribution {
@@ -659,3 +733,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
 		print-color-adjust: exact;
 		}
 	}
+
+
+
+/* Disable hover on layers - click only */
+.leaflet-control-layers:hover .leaflet-control-layers-list {
+    display: none !important;
+}
+
+.leaflet-control-layers.leaflet-control-layers-expanded .leaflet-control-layers-list {
+    display: block !important;
+}

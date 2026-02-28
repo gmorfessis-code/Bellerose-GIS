@@ -11,45 +11,7 @@
         <link rel="stylesheet" href="css/qgis2web.css">
         <link rel="stylesheet" href="css/fontawesome-all.min.css">
         <link rel="stylesheet" href="css/leaflet.photon.css">
-
-
-
-
-
-<style>
-
-
-/* Collapsible section arrows - inside the header */
-details summary {
-    list-style: none;
-    position: relative;
-    padding-left: 25px !important; /* Force padding for arrow space */
-}
-
-details summary::-webkit-details-marker {
-    display: none;
-}
-
-details summary::before {
-    content: '▶';
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 10px;
-    font-weight: bold;
-}
-
-details[open] summary::before {
-    content: '▼';
-}
-
-/* Ensure arrow inherits color from section */
-.leaflet-popup-content details summary::before {
-    color: inherit;
-}
-
-
+        <style>
 html, body, #map {
     width: 100%;
     height: 100%;
@@ -65,84 +27,12 @@ html, body, #map {
 .leaflet-popup-content-wrapper {
     border-radius: 8px;
 }
-
-
-/* ========================================
-   PART 1: ADD THIS CSS TO YOUR STYLE SECTION - MAKING MAP MORE MOBILE FRIENDLY
-   ======================================== */
-
-/* Mobile Responsive Styles */
-@media (max-width: 768px) {
-    .filter-panel {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        padding: 8px;
-    }
-    
-    .filter-panel h4 {
-        font-size: 12px;
-        margin-bottom: 6px;
-    }
-    
-    .filter-btn {
-        padding: 6px 10px;
-        font-size: 11px;
-        margin-bottom: 4px;
-    }
-    
-    /* Make popup more mobile-friendly */
-    .leaflet-popup-content-wrapper {
-        max-width: 90vw !important;
-    }
-    
-    .leaflet-popup-content {
-        margin: 8px !important;
-    }
-    
-    /* Adjust map controls for mobile */
-    .leaflet-control-zoom {
-        margin-top: 150px !important;
-    }
-    
-    .leaflet-control-layers {
-        margin-top: 10px !important;
-    }
-}
-
-@media (max-width: 480px) {
-    /* Extra small screens */
-    .filter-panel {
-        font-size: 11px;
-    }
-    
-    .leaflet-popup-content-wrapper {
-        font-size: 11px;
-    }
-}
-
-/* Improve touch targets on mobile */
-@media (hover: none) and (pointer: coarse) {
-    .filter-btn {
-        min-height: 44px; /* Apple's recommended touch target */
-    }
-    
-    details summary {
-        min-height: 44px;
-        display: flex;
-        align-items: center;
-    }
-}
-
 </style>
         <title>Bellerose Village Parcels</title>
     </head>
     <body>
         <div id="map">
-    
-   
-</div>
-
+        </div>
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
         <script src="js/L.Control.Layers.Tree.min.js"></script>
@@ -296,91 +186,58 @@ map.addLayer(layer_OpenStreetMap_1);
 
 
 // ADD SATELLITE IMAGERY BASEMAP
-var layer_GoogleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    subdomains:['mt0','mt1','mt2','mt3']
-});
+// Add this code RIGHT AFTER the OpenStreetMap_1 definition and BEFORE the basemap control
+
+// ESRI World Imagery (Satellite)
+//map.createPane('pane_ESRISatellite');
+//map.getPane('pane_ESRISatellite').style.zIndex = 399;
+//var layer_ESRISatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  //  pane: 'pane_ESRISatellite',
+   // opacity: 1.0,
+   // attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+   // minZoom: 15,
+   // maxZoom: 20,
+   // minNativeZoom: 0,
+   // maxNativeZoom: 18
+//});
+
+// ESRI World Imagery with Labels (Hybrid)
+map.createPane('pane_ESRIHybrid');
+map.getPane('pane_ESRIHybrid').style.zIndex = 398;
+
+var layer_ESRIHybrid = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        pane: 'pane_ESRIHybrid',
+        opacity: 1.0,
+        attribution: 'Tiles &copy; Esri',
+        minZoom: 15,
+        maxZoom: 20
+    }),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        pane: 'pane_ESRIHybrid',
+        opacity: 1.0,
+        minZoom: 15,
+        maxZoom: 20
+    })
+]);
+
+
+
+
+
+
+
+// THEN UPDATE YOUR BASEMAP CONTROL TO:
 
 var baseMaps = {
     "Street Map": layer_OpenStreetMap_1,
-    "Satellite": layer_GoogleHybrid
+    "Satellite": layer_ESRIHybrid
 };
-
 
 // Add layer control to map (top-right corner)
 L.control.layers(baseMaps, null, {position: 'topright'}).addTo(map);
 
-// Make layers control open on click instead of hover
-var layersControl = document.querySelector('.leaflet-control-layers');
-if (layersControl) {
-    layersControl.addEventListener('click', function(e) {
-        if (!this.classList.contains('leaflet-control-layers-expanded')) {
-            this.classList.add('leaflet-control-layers-expanded');
-        }
-    });
-    
-    // Close when clicking outside
-    map.on('click', function() {
-        layersControl.classList.remove('leaflet-control-layers-expanded');
-    });
-}
 
-// Create filter control matching layers style exactly
-
-
-// Filter Control - Hover behavior like layers
-var FilterControl = L.Control.extend({
-    options: { position: 'topright' },
-    onAdd: function (map) {
-        var container = L.DomUtil.create('div', 'leaflet-control-filter leaflet-bar leaflet-control');
-        container.innerHTML = '<a href="#" title="Filter parcels"></a><div class="filter-section"><label><input type="radio" name="filter" checked onchange="showAllParcels()"> Show All</label><label><input type="radio" name="filter" onchange="filterSplitParcels()"> Split Parcels</label><label><input type="radio" name="filter" onchange="filterParcelsWithNotes()"> Has Notes</label></div>';
-        
-        L.DomEvent.disableClickPropagation(container);
-        L.DomEvent.disableScrollPropagation(container);
-        
-        return container;
-    }
-});
-
-
-
-
-
-// Filter functions
-var currentFilter = 'all';
-
-function filterSplitParcels() {
-    layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.eachLayer(function(layer) {
-        if (layer.feature.properties.T_VILLAGE_PCT_1 < 100) {
-            layer.setStyle({ opacity: 1, fillOpacity: 0.4, weight: 2.5 });
-        } else {
-            layer.setStyle({ opacity: 0, fillOpacity: 0 });
-        }
-    });
-}
-
-function filterParcelsWithNotes() {
-    layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.eachLayer(function(layer) {
-        if (layer.feature.properties.COMMENTS) {
-            layer.setStyle({ opacity: 1, fillOpacity: 0.35, weight: 2.5 });
-        } else {
-            layer.setStyle({ opacity: 0, fillOpacity: 0 });
-        }
-    });
-}
-
-function showAllParcels() {
-    layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.eachLayer(function(layer) {
-        var originalStyle = style_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2_0(layer.feature);
-        layer.setStyle(originalStyle);
-    });
-}
-
-
-
-
-// Add filter control to map
-map.addControl(new FilterControl());
 		
 		
 //END - FIND THE SECTION WITH THE BASEMAPS (the code you just pasted)
@@ -647,11 +504,43 @@ function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_
             } else if (map.getZoom() > 19 || map.getZoom() < 2) {
                 map.removeLayer(layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2);
             }
-       
+        var overlaysTree = [
+            {label: '<img src="legend/BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.png" /> Bellerose Village Parcels - Final Version — bellerose_village_parcels_final_version', layer: layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2},
+            {label: "OpenStreetMap", layer: layer_OpenStreetMap_1, radioGroup: 'bm' },
+            {label: "OpenTopoMap", layer: layer_OpenTopoMap_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        var i = 0;
 		
 		
+		//DISABLED LABELS   GVM
+		
+        layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.eachLayer(function(layer) {
+       var context = {
+            feature: layer.feature,
+            variables: {}
+          };
+           // layer.bindTooltip((exp_label_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2_eval_expression(context) !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + exp_label_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2_eval_expression(context)) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2'});
+            //labels.push(layer);
+           // totalMarkers += 1;
+            layer.added = true;
+            //  addLabel(layer, i);
+             i++;
 			  
-      
+			
+			  
+			  
+			  
+        });
         resetLabels([layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2]);
         map.on("zoomend", function(){
             resetLabels([layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2]);
@@ -661,65 +550,7 @@ function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_
         });
         map.on("layerremove", function(){
             resetLabels([layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2]);
-			
-			
-			
-			
-			
-			
         });
-		
-/* ========================================
-   PART 3: ADD THIS JAVASCRIPT BEFORE THE CLOSING SCRIPT TAG
-   (After all the map code, near the end of the script section)
-   ======================================== */
-
-// Store reference to the parcel layer
-var currentFilter = 'all';
-
-// Filter functions
-
-function filterSplitParcels() {
-    map.eachLayer(function(layer) {
-        if (layer.feature && layer.feature.properties) {
-            if (layer.feature.properties.T_VILLAGE_PCT_1 < 100) {
-                layer.setStyle({ opacity: 1, fillOpacity: 0.4, weight: 2.5 });
-            } else {
-                layer.setStyle({ opacity: 0, fillOpacity: 0 });
-            }
-        }
-    });
-}
-
-function filterParcelsWithNotes() {
-    map.eachLayer(function(layer) {
-        if (layer.feature && layer.feature.properties) {
-            if (layer.feature.properties.COMMENTS) {
-                layer.setStyle({ opacity: 1, fillOpacity: 0.35, weight: 2.5 });
-            } else {
-                layer.setStyle({ opacity: 0, fillOpacity: 0 });
-            }
-        }
-    });
-}
-
-function showAllParcels() {
-    map.eachLayer(function(layer) {
-        if (layer.feature && layer.feature.properties) {
-            var isSplitParcel = layer.feature.properties.T_VILLAGE_PCT_1 < 100;
-            layer.setStyle({
-                opacity: 1,
-                color: isSplitParcel ? 'rgba(255,193,7,1.0)' : 'rgba(166,206,227,1.0)',
-                weight: 2.0,
-                fillOpacity: isSplitParcel ? 0.2 : 0.15,
-                fillColor: isSplitParcel ? '#ffc107' : '#7eb3d4'
-            });
-        }
-    });
-}
-		
-		
-		
         </script>        
     </body>
 </html>
