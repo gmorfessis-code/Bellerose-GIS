@@ -432,12 +432,31 @@ svg.leaflet-image-layer.leaflet-interactive path {
 }
 
 .leaflet-retina .leaflet-control-filter a {
-    background-size: 30px 30px;
+    background-size: 26px 26px;
 }
 
 .leaflet-touch .leaflet-control-filter a {
     width: 44px;
     height: 44px;
+}
+
+.leaflet-control-filter a:hover {
+    background-color: #f4f4f4;
+}
+
+/* Hide filter options by default */
+.leaflet-control-filter .filter-section {
+    display: none;
+}
+
+/* Hide icon when expanded, show options */
+.leaflet-control-filter.leaflet-control-layers-expanded a {
+    display: none;
+}
+
+.leaflet-control-filter.leaflet-control-layers-expanded .filter-section {
+    display: block;
+    position: relative;
 }
 
 /* Filter opens on hover like layers */
@@ -455,31 +474,21 @@ svg.leaflet-image-layer.leaflet-interactive path {
     display: block;
 }
 
-.leaflet-control-filter .filter-section,
-.leaflet-control-filter.leaflet-control-layers-expanded a {
-    display: none;
-}
-
-.leaflet-control-filter.leaflet-control-layers-expanded .filter-section {
-    display: block;
-    position: relative;
-}
-
-.leaflet-control-filter.leaflet-control-layers-expanded {
-    padding: 6px 10px 6px 6px;
-    color: #333;
-    background: #fff;
-}
-
+/* Filter labels */
 .leaflet-control-filter label {
     display: block;
     font-size: 13px;
-    font-size: 1.08333em;
+    cursor: pointer;
+    padding: 2px 0;
 }
 
 .leaflet-control-filter input {
     margin-right: 5px;
 }
+
+
+
+
 
 
 /* attribution and scale controls */
