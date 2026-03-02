@@ -333,7 +333,7 @@ var FilterControl = L.Control.extend({
     options: { position: 'topright' },
     onAdd: function (map) {
         var container = L.DomUtil.create('div', 'leaflet-control-filter leaflet-bar leaflet-control');
-        container.innerHTML = '<a href="#" title="Filter parcels"></a><div class="filter-section"><label><input type="radio" name="filter" checked onchange="showAllParcels()"> Show All</label><label><input type="radio" name="filter" onchange="filterSplitParcels()"> Split Parcels</label><label><input type="radio" name="filter" onchange="filterParcelsWithNotes()"> Has Notes</label></div>';
+        container.innerHTML = '<a href="#" title="Filter parcels"></a><div class="filter-section"><label><input type="radio" name="filter" checked onchange="showAllParcels()"> Show All</label><label><input type="radio" name="filter" onchange="filterParcelsWithNotes()"> Has Notes</label></div>';
         
         L.DomEvent.disableClickPropagation(container);
         L.DomEvent.disableScrollPropagation(container);
@@ -349,15 +349,6 @@ var FilterControl = L.Control.extend({
 // Filter functions
 var currentFilter = 'all';
 
-function filterSplitParcels() {
-    layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.eachLayer(function(layer) {
-        if (layer.feature.properties.T_VILLAGE_PCT_1 < 100) {
-            layer.setStyle({ opacity: 1, fillOpacity: 0.4, weight: 2.5 });
-        } else {
-            layer.setStyle({ opacity: 0, fillOpacity: 0 });
-        }
-    });
-}
 
 function filterParcelsWithNotes() {
     layer_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_version_2.eachLayer(function(layer) {
@@ -458,9 +449,10 @@ function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_
           
           <!-- Property Address Header -->
           <div style="background: linear-gradient(135deg, #6b8e23 0%, #556b2f 100%); color: white; padding: 8px; margin: -10px -10px 10px -10px; border-radius: 6px 6px 0 0;">
-            <h3 style="margin: 0 0 3px 0; font-size: 16px; font-weight: 600;">
-              ${(props.PARCEL_STREET_NUMBER && !props.PARCEL_STREET_NUMBER.includes('#') && !props.PARCEL_STREET_NUMBER.toLowerCase().includes('no')) ? props.PARCEL_STREET_NUMBER + ' ' : ''}${props.PARCEL_STREET || ''} ${expandSuffix(props.PARCEL_SUFFIX || '')}
-            </h3>
+           <h3 style="margin: 0 0 3px 0; font-size: 16px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+  <span>${(props.PARCEL_STREET_NUMBER && !props.PARCEL_STREET_NUMBER.includes('#') && !props.PARCEL_STREET_NUMBER.toLowerCase().includes('no')) ? props.PARCEL_STREET_NUMBER + ' ' : ''}${props.PARCEL_STREET || ''} ${expandSuffix(props.PARCEL_SUFFIX || '')}</span>
+  ${props.T_VILLAGE_PCT_1 < 100 ? '<span style="margin-right: 3px; font-size: 20px; color: #ff0000; text-shadow: 0 0 3px rgba(0,0,0,0.5);">⚠</span>' : ''}
+</h3>
             <div style="font-size: 13px; opacity: 0.95; margin-bottom: 6px;">
               ${props.PARCEL_CITY || ''}, ${(props.PARCEL_STATE || '').toUpperCase()} ${props.PARCEL_ZIP || ''}
             </div>
@@ -499,20 +491,7 @@ function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_
             </div>
           </div>
 
-          <!-- Collapsible Split Parcel Warning (conditional) -->
-          ${props.T_VILLAGE_PCT_1 < 100 ? `
-            <details style="background-color: #fff; border-radius: 6px; margin-bottom: 8px; border: 1px solid #ffc107;">
-              <summary style="padding: 8px; font-weight: 600; color: #856404; cursor: pointer; background-color: #fff3cd; border-radius: 6px; user-select: none; font-size: 13px;">
-                ⚠ Split Parcel
-              </summary>
-              <div style="padding: 8px; border-top: 1px solid #ffc107;">
-                <div style="font-size: 13px; color: #856404; line-height: 1.4;">
-                  ${props.T_VILLAGE_PCT_2}% is in ${props.T_VILLAGE_CODE_2 === 'BLT' ? 'Bellerose Terrace (ToH).' : props.T_VILLAGE_CODE_2 === 'FP' ? 'the Village of Floral Park.' : 'another jurisdiction.'}
-                </div>
-              </div>
-            </details>
-          ` : ''}
-
+          
           <!-- Collapsible Parcel Details Section -->
           <details style="background-color: #fff; border-radius: 6px; margin-bottom: 8px; border: 1px solid #d3d3d3;">
             <summary style="padding: 8px; font-weight: 600; color: #556b2f; cursor: pointer; background-color: #f5f8f0; border-radius: 6px; user-select: none; font-size: 13px;">
@@ -532,6 +511,14 @@ function pop_BelleroseVillageParcelsFinalVersionbellerose_village_parcels_final_
                   <td style="padding: 3px 6px; font-weight: 600; color: #556b2f;">Lot:</td>
                   <td style="padding: 3px 6px;">${props.T_LOT_NUMBER_PREF || ''}${lotSuffix}</td>
                 </tr>
+				${props.T_VILLAGE_PCT_1 < 100 ? `
+<tr style="background-color: #fff3cd;">
+  <td style="padding: 3px 6px; font-weight: 600; color: #856404; vertical-align: top;">⚠ Split Parcel:</td>
+  <td style="padding: 3px 6px; color: #856404;">${props.T_VILLAGE_PCT_2}% is in ${props.T_VILLAGE_CODE_2 === 'BLT' ? 'Bellerose Terrace (ToH)' : props.T_VILLAGE_CODE_2 === 'FP' ? 'the Village of Floral Park' : 'another jurisdiction'}</td>
+</tr>
+` : ''}
+				
+
                 <tr style="background-color: #f5f8f0;">
                   <td style="padding: 3px 6px; font-weight: 600; color: #556b2f;">School District:</td>
                   <td style="padding: 3px 6px;">22 – Floral Park-Bellerose</td>
