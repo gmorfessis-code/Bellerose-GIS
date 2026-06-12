@@ -810,7 +810,8 @@ var RadiusControl = L.Control.extend({
                 '<div class="radius-results" id="radius-results-panel">' +
                     '<div class="radius-results-header">' +
                         '<span class="radius-results-title" id="radius-results-title"></span>' +
-                        '<button class="radius-print-btn" onclick="printRadiusResults()">🖨 Print / Export</button>' +
+                        '<button class="radius-print-btn" onclick="printRadiusResults()">🖨 Print</button>' +
+                        '<button class="radius-print-btn" onclick="exportRadiusCSV()" style="margin-left:4px;background:linear-gradient(135deg,#1a5490 0%,#2d7ab8 100%);">⬇ CSV</button>' +
                     '</div>' +
                     '<div class="radius-results-list" id="radius-results-list"></div>' +
                 '</div>' +
@@ -1207,6 +1208,91 @@ function printRadiusResults() {
         '</body></html>'
     );
     printWin.document.close();
+}
+
+// ── CSV Export ───────────────────────────────────────────────
+function exportRadiusCSV() {
+    if (!window._radiusResults || window._radiusResults.length === 0) return;
+
+    var now = new Date().toLocaleDateString('en-US').replace(/\//g, '-');
+
+    // CSV helper — wraps a value in quotes and escapes any internal quotes
+    function q(val) {
+        var s = (val === null || val === undefined) ? '' : String(val);
+        return '"' + s.replace(/"/g, '""') + '"';
+    }
+
+    var lines = [];
+
+    // Header row — columns useful for label merge
+    lines.push([
+        'SBL',
+        'Property_Address',
+        'City',
+        'State',
+        'ZIP',
+        'Owner_Name',
+        'Owner_Name_2',
+        'Mailing_Address',
+        'Mailing_City',
+        'Mailing_State',
+        'Mailing_ZIP',
+        'Distance_Ft',
+        'Partial_Intersect',
+        'Subject_Parcel'
+    ].join(','));
+
+    window._radiusResults.forEach(function(r) {
+        var p = r.props;
+
+        // Property address parts
+        var streetNum = p.PARCEL_STREET_NUMBER || '';
+        if (streetNum.toLowerCase().includes('no') || streetNum.includes('#')) streetNum = '';
+        var suffixMap = { 'Blvd':'Boulevard','Ln':'Lane','Rd':'Road','Tpke':'Turnpike' };
+        var sfx = p.PARCEL_SUFFIX ? (suffixMap[p.PARCEL_SUFFIX] || p.PARCEL_SUFFIX) : '';
+        var propAddr = [streetNum, p.PARCEL_STREET || '', sfx].filter(Boolean).join(' ');
+
+        // Owner mailing address — split into components for label merge
+        // BV_OWNER_CSZ is typically "City, ST  ZIP" — parse it out
+        var mailingCity = '', mailingState = '', mailingZIP = '';
+        var csz = p.BV_OWNER_CSZ || '';
+        var cszMatch = csz.match(/^(.*),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+        if (cszMatch) {
+            mailingCity  = cszMatch[1].trim();
+            mailingState = cszMatch[2].trim();
+            mailingZIP   = cszMatch[3].trim();
+        } else if (csz) {
+            mailingCity = csz;  // fallback — put whole value in city
+        }
+
+        lines.push([
+            q(buildSBL(p)),
+            q(propAddr),
+            q(p.PARCEL_CITY || ''),
+            q((p.PARCEL_STATE || '').toUpperCase()),
+            q(p.PARCEL_ZIP || ''),
+            q(p.BV_OWNER || p.COUNTY_OWNER_2025 || ''),
+            q(p.BV_OWNER_CAREOF || ''),
+            q(p.BV_OWNER_ADDRESS || ''),
+            q(mailingCity),
+            q(mailingState),
+            q(mailingZIP),
+            q(r.isSubject ? '0' : String(r.distFt)),
+            q(r.partial ? 'Yes' : 'No'),
+            q(r.isSubject ? 'Yes' : 'No')
+        ].join(','));
+    });
+
+    var csvContent = lines.join('\r\n');
+    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'Bellerose_200ft_Radius_' + (window._radiusQuery || 'search').replace(/[^a-zA-Z0-9-]/g,'_') + '_' + now + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // ══════════════════════════════════════════════════════════════
